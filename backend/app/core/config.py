@@ -22,12 +22,17 @@ class Settings(BaseSettings):
     MONGODB_DB_NAME: str = "teach_better_db"
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost:80"]
     
     # Security
     SECRET_KEY: str = "your-secret-key-here-change-this-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # LLM Settings
+    OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    LLM_MODEL: str = "gpt-4o-mini"
     
     # Environment
     ENVIRONMENT: str = "development"
