@@ -6,17 +6,30 @@ assessment questions based on learner profiles.
 """
 
 import json
+import logging
 from typing import Optional
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import AsyncOpenAI
+from app.core.config import settings
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Initialize AsyncOpenAI client
+# We use a single client instance for better performance
+client = AsyncOpenAI(
+    api_key=settings.OPENAI_API_KEY or os.environ.get("MEGALLM_API_KEY"),
+    base_url=settings.OPENAI_BASE_URL if settings.OPENAI_BASE_URL else None
+)
+
 
 # =============================================================================
-# LLM Call Function (User should replace with actual implementation)
+# LLM Call Function
 # =============================================================================
 
 async def call_llm(prompt: str) -> str:
@@ -29,19 +42,25 @@ async def call_llm(prompt: str) -> str:
     Returns:
         The LLM response as a string
     """
-    client = OpenAI(
-        base_url="https://ai.megallm.io/v1",
-        api_key=os.environ.get("MEGALLM_API_KEY")
-    )
-
-    response = client.chat.completions.create(
-        model=os.environ.get("LLM_MODEL", "gpt-3.5-turbo"),
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    
-    return response.choices[0].message.content
+    try:
+        logger.info(f"Calling LLM with model: {settings.LLM_MODEL}")
+        
+        response = await client.chat.completions.create(
+            model=settings.LLM_MODEL,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            timeout=60.0  # Increased timeout for complex analysis
+        )
+        
+        content = response.choices[0].message.content
+        logger.info("LLM call successful")
+        return content
+        
+    except Exception as e:
+        logger.error(f"Error calling LLM: {str(e)}")
+        # Re-raise to be handled by the service layer
+        raise e
 
 
 # =============================================================================
@@ -444,5 +463,3 @@ def parse_llm_json_response(response: str) -> dict:
                 "動画や図表など、視覚的な教材を活用する。"
             ]
         }
-
-
