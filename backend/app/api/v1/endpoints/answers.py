@@ -230,8 +230,13 @@ async def get_answers_by_post(
         answer_dict["post_id"] = str(answer_dict["post_id"])
         answer_author_id = answer_dict["author_id"]
         answer_dict["author_id"] = str(answer_author_id)
-        answer_dict["votes"]["upvoted_by"] = [str(uid) for uid in answer_dict["votes"].get("upvoted_by", [])]
-        answer_dict["votes"]["downvoted_by"] = [str(uid) for uid in answer_dict["votes"].get("downvoted_by", [])]
+
+        # Calculate score from upvotes and downvotes
+        upvotes = answer_dict["votes"].get("upvoted_by", [])
+        downvotes = answer_dict["votes"].get("downvoted_by", [])
+        answer_dict["votes"]["score"] = len(upvotes) - len(downvotes)
+        answer_dict["votes"]["upvoted_by"] = [str(uid) for uid in upvotes]
+        answer_dict["votes"]["downvoted_by"] = [str(uid) for uid in downvotes]
 
         # Fetch answer author name from users collection
         from bson import ObjectId
