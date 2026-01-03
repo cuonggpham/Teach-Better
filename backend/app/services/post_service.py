@@ -69,66 +69,10 @@ class PostService:
         """
         Count total posts with filters, including search by author name
         """
-        if search and db:
-            # Use aggregation to search by author name and tag names
-            pipeline = [
-                {"$match": {"is_deleted": False}},
-                # Join with users collection
-                {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "author_id",
-                        "foreignField": "_id",
-                        "as": "author_info"
-                    }
-                },
-                {"$unwind": {"path": "$author_info", "preserveNullAndEmptyArrays": True}},
-                # Join with tags collection
-                {
-                    "$lookup": {
-                        "from": "tags",
-                        "localField": "tag_ids",
-                        "foreignField": "_id",
-                        "as": "tag_info"
-                    }
-                },
-                # Unwind tags so we can search within tag names
-                {"$unwind": {"path": "$tag_info", "preserveNullAndEmptyArrays": True}}
-            ]
-            
-            # Build match conditions
-            match_conditions = []
-            
-            if author_id and ObjectId.is_valid(author_id):
-                match_conditions.append({"author_id": ObjectId(author_id)})
-            
-            if tag_ids:
-                valid_tag_ids = [ObjectId(tag_id) for tag_id in tag_ids if ObjectId.is_valid(tag_id)]
-                if valid_tag_ids:
-                    match_conditions.append({"tag_ids": {"$in": valid_tag_ids}})
-            
-            if category:
-                match_conditions.append({"category": category})
-            
-            # Search in title, content, author name, and tag names
-            search_conditions = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"content": {"$regex": search, "$options": "i"}},
-                {"author_info.name": {"$regex": search, "$options": "i"}},
-                {"tag_info.name": {"$regex": search, "$options": "i"}}
-            ]
-            match_conditions.append({"$or": search_conditions})
-            
-            if match_conditions:
-                pipeline.append({"$match": {"$and": match_conditions}})
-            
-            # Count - need to group back after unwinding tags to avoid duplicate counts
-            pipeline.append({"$group": {"_id": "$_id", "doc": {"$first": "$$ROOT"}}})
-            pipeline.append({"$replaceRoot": {"newRoot": "$doc"}})
-            pipeline.append({"$count": "total"})
-            
-            result = await self.collection.aggregate(pipeline).to_list(length=1)
-            return result[0]["total"] if result else 0
+        # Always use simple query for now (aggregation can be slow/buggy)
+        # TODO: Re-enable aggregation search for author/tag names after optimization
+        if False:  # Disabled aggregation search
+            pass
         else:
             # Original simple query without author name search
             query = {"is_deleted": False}
@@ -166,76 +110,10 @@ class PostService:
         """
         Get list of posts with filters and sorting, including search by author name
         """
-        if search and db:
-            # Use aggregation to search by author name and tag names
-            pipeline = [
-                {"$match": {"is_deleted": False}},
-                # Join with users collection
-                {
-                    "$lookup": {
-                        "from": "users",
-                        "localField": "author_id",
-                        "foreignField": "_id",
-                        "as": "author_info"
-                    }
-                },
-                {"$unwind": {"path": "$author_info", "preserveNullAndEmptyArrays": True}},
-                # Join with tags collection
-                {
-                    "$lookup": {
-                        "from": "tags",
-                        "localField": "tag_ids",
-                        "foreignField": "_id",
-                        "as": "tag_info"
-                    }
-                },
-                # Unwind tags so we can search within tag names
-                {"$unwind": {"path": "$tag_info", "preserveNullAndEmptyArrays": True}}
-            ]
-            
-            # Build match conditions
-            match_conditions = []
-            
-            if author_id and ObjectId.is_valid(author_id):
-                match_conditions.append({"author_id": ObjectId(author_id)})
-            
-            if tag_ids:
-                valid_tag_ids = [ObjectId(tag_id) for tag_id in tag_ids if ObjectId.is_valid(tag_id)]
-                if valid_tag_ids:
-                    match_conditions.append({"tag_ids": {"$in": valid_tag_ids}})
-            
-            if category:
-                match_conditions.append({"category": category})
-            
-            # Search in title, content, author name, and tag names
-            search_conditions = [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"content": {"$regex": search, "$options": "i"}},
-                {"author_info.name": {"$regex": search, "$options": "i"}},
-                {"tag_info.name": {"$regex": search, "$options": "i"}}
-            ]
-            match_conditions.append({"$or": search_conditions})
-            
-            if match_conditions:
-                pipeline.append({"$match": {"$and": match_conditions}})
-            
-            # Group back posts that were unwound for tag searching to avoid duplicates
-            pipeline.append({"$group": {"_id": "$_id", "doc": {"$first": "$$ROOT"}}})
-            pipeline.append({"$replaceRoot": {"newRoot": "$doc"}})
-            
-            # Sort, skip, limit
-            pipeline.append({"$sort": {sort_by: sort_order}})
-            pipeline.append({"$skip": skip})
-            pipeline.append({"$limit": limit})
-            
-            # Remove the author_info and tag_info fields we added for search
-            pipeline.append({"$project": {"author_info": 0, "tag_info": 0}})
-            
-            posts = await self.collection.aggregate(pipeline).to_list(length=limit)
-            
-            print(f"[DEBUG] get_posts (with author search) found {len(posts)} posts")
-            
-            return [PostModel(**post) for post in posts]
+        # Always use simple query for now (aggregation can be slow/buggy)
+        # TODO: Re-enable aggregation search for author/tag names after optimization
+        if False:  # Disabled aggregation search
+            pass
         else:
             # Original simple query without author name search
             query = {"is_deleted": False}

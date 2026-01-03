@@ -1,13 +1,19 @@
 """
-Seed data script for teach-better application
-Creates: 10 users (2 admins), 10 categories, tags for each category, 20 posts
+Seed data script for TeachBetter application (Updated for Final Demo)
+Context: ITSS Japanese Teacher (Nguyen Thi Diep)
 """
 import asyncio
 from datetime import datetime, timedelta
 import random
+import sys
 from motor.motor_asyncio import AsyncIOMotorClient
-from bson import ObjectId
 from passlib.context import CryptContext
+from bson import ObjectId
+
+# Fix encoding issue on Windows
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # Database settings
 MONGODB_URL = "mongodb://localhost:27017"
@@ -17,409 +23,405 @@ MONGODB_DB_NAME = "teach_better_db"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 DEFAULT_PASSWORD = "password123"
 
-
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-
-# ============ USERS DATA ============
+# ============ 1. USERS DATA (PERSONAS) ============
 USERS = [
-    # Admins
+    # --- MAIN CHARACTER (DEMO USER) ---
     {
-        "name": "Admin Nguyễn",
+        "id_ref": "diep",
+        "name": "Nguyễn Thị Điệp",  # Tên hiển thị đầy đủ
+        "email": "diep.nguyen@example.com", # Email đăng nhập
+        "role": "user",
+        "bio": "Giáo viên mới phụ trách môn ITSS. Đang tìm phương pháp dạy Agile hiệu quả cho sinh viên N4-N3.",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Diep2"
+    },
+    # --- ADMINS ---
+    {
+        "id_ref": "admin1",
+        "name": "Admin System",
         "email": "admin@teachbetter.com",
         "role": "admin",
-        "bio": "Quản trị viên hệ thống Teach Better",
-        "avatar_url": None
+        "bio": "System Administrator",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin1"
     },
+    # --- SUPPORTING CHARACTERS (SENSEIS) ---
     {
-        "name": "Admin Trần",
-        "email": "admin2@teachbetter.com",
-        "role": "admin",
-        "bio": "Quản trị viên phụ trách nội dung",
-        "avatar_url": None
-    },
-    # Regular users
-    {
-        "name": "Lê Văn A",
-        "email": "levan.a@gmail.com",
+        "id_ref": "yorifuji",
+        "name": "Yorifuji", # Chỉ để họ
+        "email": "yorifuji@example.com",
         "role": "user",
-        "bio": "Giáo viên Toán THPT",
-        "avatar_url": None
+        "bio": "ITSS担当。現場経験10年のベテラン。",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Yorifuji"
     },
     {
-        "name": "Trần Thị B",
-        "email": "tranthi.b@gmail.com",
+        "id_ref": "kimura",
+        "name": "Kimura", # Chỉ để họ
+        "email": "kimura@example.com",
         "role": "user",
-        "bio": "Sinh viên Đại học Sư phạm Hà Nội",
-        "avatar_url": None
+        "bio": "たとえ話が得意な先生。",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Kimura"
     },
     {
-        "name": "Phạm Văn C",
-        "email": "phamvan.c@gmail.com",
+        "id_ref": "diem",
+        "name": "Diem", # Chỉ để tên
+        "email": "diem@example.com",
         "role": "user",
-        "bio": "Giáo viên Tiếng Anh THCS",
-        "avatar_url": None
+        "bio": "N1保持者のベトナム人教師。",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Diem"
     },
     {
-        "name": "Nguyễn Thị D",
-        "email": "nguyenthi.d@gmail.com",
+        "id_ref": "giang",
+        "name": "Lê Thị Giang",
+        "email": "giang.le@example.com",
         "role": "user",
-        "bio": "Gia sư môn Vật lý",
-        "avatar_url": None
+        "bio": "ベトナム人のITSS専門講師。実務経験豊富。",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Giang"
     },
     {
-        "name": "Hoàng Văn E",
-        "email": "hoangvan.e@gmail.com",
+        "id_ref": "tanaka",
+        "name": "Tanaka",
+        "email": "tanaka@example.com",
         "role": "user",
-        "bio": "Giáo viên Hóa học THPT Chuyên",
-        "avatar_url": None
+        "bio": "初級文法担当。",
+        "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Tanaka"
     },
-    {
-        "name": "Vũ Thị F",
-        "email": "vuthi.f@gmail.com",
-        "role": "user",
-        "bio": "Sinh viên năm cuối ngành Sư phạm Văn",
-        "avatar_url": None
-    },
-    {
-        "name": "Đặng Văn G",
-        "email": "dangvan.g@gmail.com",
-        "role": "user",
-        "bio": "Giáo viên Tin học",
-        "avatar_url": None
-    },
-    {
-        "name": "Bùi Thị H",
-        "email": "buithi.h@gmail.com",
-        "role": "user",
-        "bio": "Giáo viên Sinh học THCS",
-        "avatar_url": None
-    }
+    # --- FILLER USERS (Để tạo bài viết rác cho xôm) ---
+    { "id_ref": "sato", "name": "Sato", "email": "sato@ex.com", "role": "user", "bio": "漢字教育", "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sato" },
+    { "id_ref": "suzuki", "name": "Suzuki", "email": "suzuki@ex.com", "role": "user", "bio": "会話クラス", "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Suzuki" },
+    { "id_ref": "yamada", "name": "Yamada", "email": "yamada@ex.com", "role": "user", "bio": "作文指導", "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Yamada" },
+    { "id_ref": "takahashi", "name": "Takahashi", "email": "taka@ex.com", "role": "user", "bio": "JLPT対策", "avatar_url": "https://api.dicebear.com/7.x/avataaars/svg?seed=Taka" }
 ]
 
-
-# ============ CATEGORIES DATA ============
+# ============ 2. CATEGORIES ============
 CATEGORIES = [
-    {
-        "name": "Toán học",
-        "description": "Các câu hỏi về đại số, hình học, giải tích và các chủ đề toán học khác"
-    },
-    {
-        "name": "Tiếng Anh",
-        "description": "Ngữ pháp, từ vựng, kỹ năng đọc và viết tiếng Anh"
-    },
-    {
-        "name": "Vật lý",
-        "description": "Cơ học, điện học, quang học và các hiện tượng vật lý"
-    },
-    {
-        "name": "Hóa học",
-        "description": "Hóa học hữu cơ, vô cơ, phản ứng hóa học"
-    },
-    {
-        "name": "Ngữ văn",
-        "description": "Văn học Việt Nam, văn học nước ngoài, làm văn"
-    },
-    {
-        "name": "Lịch sử",
-        "description": "Lịch sử Việt Nam và lịch sử thế giới"
-    },
-    {
-        "name": "Địa lý",
-        "description": "Địa lý tự nhiên và địa lý kinh tế - xã hội"
-    },
-    {
-        "name": "Sinh học",
-        "description": "Di truyền học, sinh thái học, giải phẫu sinh lý"
-    },
-    {
-        "name": "Tin học",
-        "description": "Lập trình, thuật toán, cơ sở dữ liệu và công nghệ thông tin"
-    },
-    {
-        "name": "Giáo dục công dân",
-        "description": "Đạo đức, pháp luật và kỹ năng sống"
-    }
+    {"name": "IT日本語 (IT Nihongo)", "description": "ITSS, Thuật ngữ chuyên ngành, Quy trình phát triển"},
+    {"name": "文法指導 (Grammar)", "description": "Phương pháp dạy ngữ pháp, Phân tích lỗi sai"},
+    {"name": "授業運営 (Classroom)", "description": "Quản lý lớp học, Tạo động lực, Game"},
+    {"name": "会話・聴解 (Kaiwa/Chokai)", "description": "Dạy hội thoại và nghe hiểu"},
+    {"name": "キャリア支援 (Career)", "description": "Phỏng vấn, Viết CV, Business Manners"}
 ]
 
-
-# ============ TAGS DATA (mapped to categories) ============
+# ============ 3. TAGS ============
 TAGS_BY_CATEGORY = {
-    "Toán học": [
-        {"name": "Đại số", "description": "Đại số cơ bản và nâng cao"},
-        {"name": "Hình học", "description": "Hình học phẳng và không gian"},
-        {"name": "Giải tích", "description": "Đạo hàm, tích phân, giới hạn"},
-        {"name": "Tổ hợp - Xác suất", "description": "Tổ hợp, hoán vị và xác suất"}
+    "IT日本語 (IT Nihongo)": [
+        {"name": "QA/QC", "description": "Chất lượng phần mềm"},
+        {"name": "Agile/Scrum", "description": "Phương pháp phát triển"},
+        {"name": "基本情報 (FE)", "description": "Luyện thi FE"},
+        {"name": "要件定義", "description": "Định nghĩa yêu cầu"}
     ],
-    "Tiếng Anh": [
-        {"name": "Grammar", "description": "Ngữ pháp tiếng Anh"},
-        {"name": "Vocabulary", "description": "Từ vựng tiếng Anh"},
-        {"name": "IELTS", "description": "Luyện thi IELTS"},
-        {"name": "TOEIC", "description": "Luyện thi TOEIC"}
+    "文法指導 (Grammar)": [
+        {"name": "導入 (Introduction)", "description": "Cách vào bài"},
+        {"name": "N3レベル", "description": "Trình độ Trung cấp"},
+        {"name": "N4レベル", "description": "Trình độ Sơ cấp 2"},
+        {"name": "受身形 (Passive)", "description": "Thể bị động"},
+        {"name": "使役形 (Causative)", "description": "Thể sai khiến"}
     ],
-    "Vật lý": [
-        {"name": "Cơ học", "description": "Động học, động lực học"},
-        {"name": "Điện học", "description": "Điện tích, điện trường, mạch điện"},
-        {"name": "Quang học", "description": "Ánh sáng, thấu kính, gương"},
-        {"name": "Nhiệt học", "description": "Nhiệt độ, nhiệt lượng, các quá trình nhiệt"}
+    "授業運営 (Classroom)": [
+        {"name": "Game", "description": "Trò chơi lớp học"},
+        {"name": "Ice Break", "description": "Khuấy động không khí"},
+        {"name": "Trouble", "description": "Xử lý sự cố"}
     ],
-    "Hóa học": [
-        {"name": "Hóa hữu cơ", "description": "Hợp chất hữu cơ"},
-        {"name": "Hóa vô cơ", "description": "Hợp chất vô cơ"},
-        {"name": "Bảng tuần hoàn", "description": "Nguyên tố hóa học"},
-        {"name": "Phản ứng hóa học", "description": "Cân bằng và tính toán hóa học"}
-    ],
-    "Ngữ văn": [
-        {"name": "Văn học cổ điển", "description": "Văn học trung đại Việt Nam"},
-        {"name": "Văn học hiện đại", "description": "Văn học Việt Nam từ 1930"},
-        {"name": "Nghị luận văn học", "description": "Cách viết bài nghị luận"},
-        {"name": "Văn học nước ngoài", "description": "Tác phẩm văn học thế giới"}
-    ],
-    "Lịch sử": [
-        {"name": "Lịch sử Việt Nam", "description": "Các thời kỳ lịch sử Việt Nam"},
-        {"name": "Lịch sử thế giới", "description": "Lịch sử các nước trên thế giới"},
-        {"name": "Cách mạng Việt Nam", "description": "Các phong trào cách mạng"}
-    ],
-    "Địa lý": [
-        {"name": "Địa lý tự nhiên", "description": "Khí hậu, địa hình, thủy văn"},
-        {"name": "Địa lý kinh tế", "description": "Kinh tế các vùng và ngành"},
-        {"name": "Địa lý dân cư", "description": "Dân số và phân bố dân cư"}
-    ],
-    "Sinh học": [
-        {"name": "Di truyền học", "description": "Gen, biến dị, đột biến"},
-        {"name": "Sinh thái học", "description": "Hệ sinh thái và môi trường"},
-        {"name": "Sinh học tế bào", "description": "Cấu trúc và chức năng tế bào"}
-    ],
-    "Tin học": [
-        {"name": "Python", "description": "Lập trình Python"},
-        {"name": "Thuật toán", "description": "Giải thuật và cấu trúc dữ liệu"},
-        {"name": "Web Development", "description": "Phát triển web"},
-        {"name": "Cơ sở dữ liệu", "description": "SQL và NoSQL"}
-    ],
-    "Giáo dục công dân": [
-        {"name": "Đạo đức", "description": "Giáo dục đạo đức"},
-        {"name": "Pháp luật", "description": "Kiến thức pháp luật cơ bản"},
-        {"name": "Kỹ năng sống", "description": "Kỹ năng mềm và phát triển bản thân"}
+    "キャリア支援 (Career)": [
+        {"name": "面接 (Interview)", "description": "Phỏng vấn xin việc"},
+        {"name": "マナー (Manners)", "description": "Văn hóa công sở"}
     ]
 }
 
-
-# ============ POSTS DATA ============
-POSTS = [
-    # Toán học posts
+# ============ 4. POSTS DATA (Nhiều bài để lướt mỏi tay) ============
+POSTS_DATA = [
+    # --- BÀI MỚI (Đẩy bài Yorifuji xuống) ---
     {
-        "title": "Cách giải phương trình bậc hai dạng đặc biệt?",
-        "content": """Mình đang gặp khó khăn với dạng phương trình: ax² + bx + c = 0 khi a + b + c = 0.
+        "author_ref": "suzuki",
+        "title": "オンライン授業での学生のモチベーション維持について",
+        "content": """リモート授業が増えて、学生の集中力が続かない問題に直面しています。
+カメラオフの学生も多く、本当に聞いているのか分からない状況です。
 
-Có ai biết cách giải nhanh không ạ? Mình thấy công thức nghiệm delta dài quá.
-
-Ví dụ: 2x² - 3x + 1 = 0
-
-Mong các bạn hướng dẫn!""",
-        "category": "Toán học",
-        "tags": ["Đại số"]
+皆さんはどんな工夫をしていますか？
+ブレイクアウトルームやクイズなど、効果的な方法があれば教えてください！""",
+        "category": "授業運営 (Classroom)",
+        "tags": ["Ice Break", "Trouble"],
+        "views": 234,
+        "days_ago": 0  # Posted today
     },
     {
-        "title": "Tính tích phân bằng phương pháp đổi biến",
-        "content": """Cho tích phân: ∫(0→1) x√(1-x²) dx
+        "author_ref": "kimura",
+        "title": "N3文法「〜によって」の使い分けが難しい",
+        "content": """「方法」「原因」「人によって違う」など、〜によっての用法が多すぎて学生が混乱しています。
+一つ一つ例文を出しても、試験になると間違える学生が多いです。
 
-Mình muốn hỏi cách đặt u = 1 - x² có đúng không? Và các bước tính chi tiết như thế nào?
-
-Cảm ơn mọi người!""",
-        "category": "Toán học",
-        "tags": ["Giải tích"]
-    },
-    # Tiếng Anh posts
-    {
-        "title": "Phân biệt 'Present Perfect' và 'Past Simple'",
-        "content": """Mình hay bị nhầm lẫn giữa hai thì này. Ví dụ:
-        
-- I have visited Paris. (Present Perfect)
-- I visited Paris last year. (Past Simple)
-
-Khi nào dùng thì nào? Có quy tắc gì dễ nhớ không ạ?""",
-        "category": "Tiếng Anh",
-        "tags": ["Grammar"]
+効果的な導入方法や練習問題の作り方があれば共有していただけませんか？""",
+        "category": "文法指導 (Grammar)",
+        "tags": ["N3レベル", "導入 (Introduction)"],
+        "views": 189,
+        "days_ago": 1
     },
     {
-        "title": "Cách học từ vựng IELTS hiệu quả?",
-        "content": """Mình đang chuẩn bị thi IELTS và cần học khoảng 3000 từ vựng.
+        "author_ref": "diem",
+        "title": "面接練習での「志望動機」の添削について",
+        "content": """来月から就活が始まる学生の面接練習をしています。
+志望動機を聞くと、みんな「日本語が好き」「日本の文化が好き」という答えばかりで、IT企業向けの志望動機になっていません。
 
-Có ai có kinh nghiệm học từ vựng hiệu quả không? Dùng app nào tốt? Nên học theo chủ đề hay theo tần suất xuất hiện?
-
-Mục tiêu của mình là 7.0 trong 4 tháng.""",
-        "category": "Tiếng Anh",
-        "tags": ["IELTS", "Vocabulary"]
-    },
-    # Vật lý posts
-    {
-        "title": "Bài toán chuyển động ném xiên",
-        "content": """Một vật được ném xiên với vận tốc ban đầu v₀ = 20 m/s, góc ném α = 30°.
-
-Hỏi:
-1. Độ cao cực đại của vật?
-2. Tầm bay xa?
-3. Thời gian chuyển động?
-
-(Bỏ qua sức cản không khí, g = 10 m/s²)""",
-        "category": "Vật lý",
-        "tags": ["Cơ học"]
+どうやって具体的な志望動機を引き出せばいいでしょうか？""",
+        "category": "キャリア支援 (Career)",
+        "tags": ["面接 (Interview)"],
+        "views": 445,
+        "days_ago": 1
     },
     {
-        "title": "Cách tính điện trở tương đương mạch cầu",
-        "content": """Cho mạch điện hình cầu với 5 điện trở bằng nhau R.
+        "author_ref": "sato",
+        "title": "Agileの「スクラムマスター」を日本語でどう説明する？",
+        "content": """ITSSの授業でスクラムを教えていますが、「スクラムマスター」の役割を日本語で説明するのが難しいです。
+「進行役」「調整役」「ファシリテーター」など色々な訳があって、学生も混乱しています。
 
-Mình không biết cách xác định mạch cầu cân bằng và tính điện trở tương đương.
-
-Mong các bạn giải thích chi tiết!""",
-        "category": "Vật lý",
-        "tags": ["Điện học"]
-    },
-    # Hóa học posts
-    {
-        "title": "Cân bằng phương trình phản ứng oxi hóa khử",
-        "content": """Fe + HNO₃ → Fe(NO₃)₃ + NO↑ + H₂O
-
-Mình cần cân bằng phương trình trên bằng phương pháp thăng bằng electron.
-
-Ai có thể hướng dẫn từng bước không ạ?""",
-        "category": "Hóa học",
-        "tags": ["Phản ứng hóa học"]
+実際の現場ではどう呼ばれているのでしょうか？""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["Agile/Scrum"],
+        "views": 312,
+        "days_ago": 2
     },
     {
-        "title": "Phân biệt các loại isomer trong hóa hữu cơ",
-        "content": """Mình đang học phần đồng phân trong hóa hữu cơ nhưng hay nhầm lẫn:
+        "author_ref": "tanaka",
+        "title": "JLPT N3の「〜たばかり」と「〜ばかり」の違い",
+        "content": """「食べたばかり」（just ate）と「野菜ばかり食べる」（only eat）の違いを説明していますが、
+学生は「ばかり」という同じ言葉が出てくると混乱するようです。
 
-- Đồng phân cấu tạo
-- Đồng phân hình học
-- Đồng phân quang học
-
-Có ai giải thích và cho ví dụ rõ ràng không?""",
-        "category": "Hóa học",
-        "tags": ["Hóa hữu cơ"]
+分かりやすい教え方のコツはありますか？""",
+        "category": "文法指導 (Grammar)",
+        "tags": ["N3レベル"],
+        "views": 278,
+        "days_ago": 3
     },
-    # Ngữ văn posts
+
+    # --- BÀI QUAN TRỌNG NHẤT (ĐỂ TÌM KIẾM TRONG DEMO) ---
     {
-        "title": "Phân tích nhân vật Chí Phèo trong tác phẩm cùng tên",
-        "content": """Mình cần làm bài phân tích nhân vật Chí Phèo.
+        "author_ref": "yorifuji",
+        "title": "🆘 QAとQCの違い、どう教えれば伝わりますか？", # Tiêu đề đúng kịch bản
+        "content": """毎年同じ説明をしているのに、期末テストでまた間違える学生が続出しています... 😓
+「QAはプロセス、QCはプロダクト」と教科書通りに言っても、学生の反応はイマイチです。
 
-Các ý chính cần triển khai là gì? Làm sao để bài viết không bị lan man?
-
-Mọi người có thể chia sẻ dàn ý không ạ?""",
-        "category": "Ngữ văn",
-        "tags": ["Văn học hiện đại", "Nghị luận văn học"]
+ベトナム人の学生にとって、この概念は直感的に理解しにくいのでしょうか？
+皆さん、学生が「あ！なるほど！」となるような、分かりやすい例え話（メタファー）を持っていませんか？""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["QA/QC", "N3レベル"],
+        "views": 1250,
+        "is_qa_scenario": True, # Cờ để thêm comment
+        "days_ago": 5  # Posted 5 days ago
     },
-    {
-        "title": "Cách viết mở bài nghị luận xã hội hay?",
-        "content": """Mình thấy phần mở bài nghị luận xã hội rất quan trọng nhưng không biết viết sao cho hấp dẫn.
 
-Có những cách mở bài nào? Ví dụ cho đề: "Sống là cho đâu chỉ nhận riêng mình"?""",
-        "category": "Ngữ văn",
-        "tags": ["Nghị luận văn học"]
+    # --- BÀI CỦA ĐIỆP (Để profile không trống) ---
+    {
+        "author_ref": "diep",
+        "title": "【相談】ITSSの授業で「報連相」をロールプレイで行う際の設定について",
+        "content": """新米教師のĐiệpです。来週、報連相（ホウレンソウ）の授業を行います。
+単なる説明だけでなく、実際に学生に演じさせたいのですが、N4レベルでもできる簡単なシチュエーション設定はありますか？
+今のところ「遅刻の連絡」くらいしか思いつかなくて...""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["N4レベル", "Game"],
+        "views": 45
     },
-    # Lịch sử posts
-    {
-        "title": "Nguyên nhân thắng lợi cách mạng tháng 8/1945",
-        "content": """Bạn nào có thể tổng hợp các nguyên nhân chủ quan và khách quan dẫn đến thắng lợi của Cách mạng tháng Tám 1945?
 
-Mình cần chuẩn bị cho bài kiểm tra tuần tới.""",
-        "category": "Lịch sử",
-        "tags": ["Lịch sử Việt Nam", "Cách mạng Việt Nam"]
-    },
+    # --- FILLER POSTS (BÀI RÁC CHO XÔM) ---
     {
-        "title": "So sánh hai cuộc chiến tranh thế giới",
-        "content": """Mình cần so sánh Chiến tranh thế giới thứ nhất và thứ hai về:
-- Nguyên nhân
-- Diễn biến chính
-- Kết quả và hậu quả
-
-Mọi người giúp mình với!""",
-        "category": "Lịch sử",
-        "tags": ["Lịch sử thế giới"]
-    },
-    # Địa lý posts
-    {
-        "title": "Đặc điểm khí hậu nhiệt đới gió mùa Việt Nam",
-        "content": """Mình cần trình bày đặc điểm khí hậu nhiệt đới gió mùa của Việt Nam và ảnh hưởng đến sản xuất nông nghiệp.
-
-Có ai có tài liệu hoặc ý chính không ạ?""",
-        "category": "Địa lý",
-        "tags": ["Địa lý tự nhiên"]
+        "author_ref": "sato",
+        "title": "漢字が苦手なIT学生への指導法",
+        "content": """コードは書けるのに、仕様書の漢字が読めない学生が多いです。「技術があれば日本語はいらない」と思っている学生に、どう動機づけしていますか？""",
+        "category": "授業運営 (Classroom)",
+        "tags": ["Trouble"],
+        "views": 320
     },
     {
-        "title": "Phân tích thế mạnh kinh tế vùng Đông Nam Bộ",
-        "content": """Vùng Đông Nam Bộ có những thế mạnh kinh tế gì?
-
-Tại sao vùng này lại là đầu tàu kinh tế của cả nước?""",
-        "category": "Địa lý",
-        "tags": ["Địa lý kinh tế"]
-    },
-    # Sinh học posts
-    {
-        "title": "Quy luật phân li độc lập của Mendel",
-        "content": """Mình không hiểu rõ quy luật phân li độc lập.
-
-Ví dụ: Nếu P: AaBb x AaBb thì tỉ lệ kiểu gen và kiểu hình ở F1 là bao nhiêu?
-
-Giải thích chi tiết giúp mình với!""",
-        "category": "Sinh học",
-        "tags": ["Di truyền học"]
+        "author_ref": "tanaka",
+        "title": "「〜てもいいですか」と「〜てくれませんか」の使い分け",
+        "content": """許可と依頼の違いですが、ベトナム語だと同じような訳になることがあり、混乱する学生がいます。良い図解があれば教えてください。""",
+        "category": "文法指導 (Grammar)",
+        "tags": ["N4レベル", "導入 (Introduction)"],
+        "views": 210
     },
     {
-        "title": "Chuỗi thức ăn và lưới thức ăn trong hệ sinh thái",
-        "content": """Phân biệt chuỗi thức ăn và lưới thức ăn?
-
-Cho ví dụ về một lưới thức ăn trong hệ sinh thái rừng nhiệt đới.""",
-        "category": "Sinh học",
-        "tags": ["Sinh thái học"]
-    },
-    # Tin học posts
-    {
-        "title": "Cách viết hàm đệ quy tính giai thừa trong Python",
-        "content": """Mình mới học Python và muốn viết hàm đệ quy tính n!
-
-```python
-def factorial(n):
-    # ???
-```
-
-Mọi người hướng dẫn giúp mình với!""",
-        "category": "Tin học",
-        "tags": ["Python", "Thuật toán"]
+        "author_ref": "suzuki",
+        "title": "Agile開発の「スプリント」と「イテレーション」の違い",
+        "content": """ITSSの教科書によって定義が曖昧な気がします。授業では厳密に分けるべきでしょうか？それとも「繰り返し」としてまとめて教えてもいいでしょうか？""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["Agile/Scrum", "基本情報 (FE)"],
+        "views": 89
     },
     {
-        "title": "Khác biệt giữa SQL và NoSQL?",
-        "content": """Mình đang tìm hiểu về database và thấy có 2 loại: SQL và NoSQL.
-
-Khi nào nên dùng SQL? Khi nào nên dùng NoSQL?
-
-Cho ví dụ cụ thể giúp mình với!""",
-        "category": "Tin học",
-        "tags": ["Cơ sở dữ liệu"]
-    },
-    # Giáo dục công dân posts
-    {
-        "title": "Quyền và nghĩa vụ cơ bản của công dân",
-        "content": """Theo Hiến pháp 2013, công dân Việt Nam có những quyền và nghĩa vụ cơ bản nào?
-
-Mình cần chuẩn bị cho buổi thảo luận nhóm.""",
-        "category": "Giáo dục công dân",
-        "tags": ["Pháp luật"]
+        "author_ref": "kimura",
+        "title": "面接練習でよくある「逆質問」のリスト",
+        "content": """日本のIT企業の面接で、最後に「何か質問はありますか？」と聞かれた時、学生が沈黙してしまいます。効果的な逆質問リストを作りたいです。""",
+        "category": "キャリア支援 (Career)",
+        "tags": ["面接 (Interview)"],
+        "views": 560
     },
     {
-        "title": "Làm thế nào để rèn luyện kỹ năng giao tiếp?",
-        "content": """Mình khá nhút nhát và muốn cải thiện kỹ năng giao tiếp.
+        "author_ref": "diem",
+        "title": "N3文法「〜まま」と「〜っぱなし」の違い",
+        "content": """「窓を開けたまま寝る」と「窓を開けっぱなしで寝る」。ニュアンスの違い（不満の有無など）をどう説明していますか？""",
+        "category": "文法指導 (Grammar)",
+        "tags": ["N3レベル", "誤用分析 (Error Analysis)"],
+        "views": 150
+    },
+    {
+        "author_ref": "yamada",
+        "title": "授業中に寝ている学生への対応（ITクラス）",
+        "content": """夜遅くまでコーディングのバイトをしているそうで、授業中爆睡しています。起こすべきか、寝かせておくべきか...皆さんのクラスではどういうルールですか？""",
+        "category": "授業運営 (Classroom)",
+        "tags": ["Trouble"],
+        "views": 410
+    },
+    {
+        "author_ref": "takahashi",
+        "title": "基本情報技術者試験（FE）の日本語語彙リスト",
+        "content": """今年の試験に出そうな単語リストを作成しました。欲しい方はコメントください！PDFで送ります。""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["基本情報 (FE)"],
+        "views": 890
+    },
+    {
+        "author_ref": "yorifuji",
+        "title": "ウォーターフォール開発のメリットをどう伝える？",
+        "content": """最近はAgileばかり人気ですが、大規模システムでのウォーターフォールの重要性も教えたいです。良い事例はありますか？""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["要件定義", "Agile/Scrum"],
+        "views": 120
+    },
+    {
+        "author_ref": "sato",
+        "title": "「上流工程」と「下流工程」のイメージ図",
+        "content": """川の流れに例えて説明していますが、他にいいアイデアはありますか？""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["要件定義", "導入 (Introduction)"],
+        "views": 230
+    },
+    {
+        "author_ref": "tanaka",
+        "title": "受身形（Ukemi）の導入ゲーム",
+        "content": """「泥棒に財布を盗まれた」だと暗いので、もっと楽しい導入ゲームを探しています。""",
+        "category": "文法指導 (Grammar)",
+        "tags": ["受身形 (Passive)", "Game"],
+        "views": 340
+    },
+    {
+        "author_ref": "suzuki",
+        "title": "日本人のPMとの飲み会マナー",
+        "content": """インターンに行く学生向けに、飲み会での席次やお酒の注ぎ方を教える必要はありますか？最近は日本もフラットになってきていると聞きますが。""",
+        "category": "キャリア支援 (Career)",
+        "tags": ["マナー (Manners)"],
+        "views": 670
+    },
+    {
+        "author_ref": "diem",
+        "title": "敬語「〜ていただく」の過剰使用について",
+        "content": """「ご参加していただく」「お読みしていただく」のような二重敬語？変な日本語を使う学生が増えています。""",
+        "category": "文法指導 (Grammar)",
+        "tags": ["N3レベル", "誤用分析 (Error Analysis)"],
+        "views": 180
+    },
+    {
+        "author_ref": "kimura",
+        "title": "Gitのコミットメッセージの日本語指導",
+        "content": """「修正した」だけじゃなくて、「何を・なぜ」修正したか書くように指導したいです。良いテンプレートはありますか？""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["QA/QC"],
+        "views": 290
+    },
+    {
+        "author_ref": "yamada",
+        "title": "仕様書の読解練習に使えるサイト",
+        "content": """実際の仕様書に近い日本語が読めるサイトを探しています。""",
+        "category": "IT日本語 (IT Nihongo)",
+        "tags": ["要件定義"],
+        "views": 450
+    },
+    {
+        "author_ref": "takahashi",
+        "title": "JLPT N2の聴解とIT現場の聴解の違い",
+        "content": """JLPTは綺麗すぎますよね。もっと早口で省略が多い現場の会話練習用教材を作りませんか？""",
+        "category": "会話・聴解 (Kaiwa/Chokai)",
+        "tags": ["N3レベル"],
+        "views": 510
+    }
+]
 
-Có bạn nào có kinh nghiệm không? Chia sẻ tips giúp mình với!""",
-        "category": "Giáo dục công dân",
-        "tags": ["Kỹ năng sống"]
+# ============ 5. ANSWERS (COMMENTS) ============
+# Comment cho bài QA/QC của Yorifuji (chỉ có Yorifuji, Kimura, Diem, Giang tương tác)
+QA_ANSWERS = [
+    {
+        "author_ref": "diem",
+        "content": """🏥 医療に例えるのが鉄板ですよ！
+
+私はいつもこう説明しています：
+• QA = 「病気にならないように生活習慣を整える（予防）」
+• QC = 「病気を見つけて治す（治療）」
+
+これで私のクラスは全員正解しました✨ 試してみてください！""",
+        "upvote_count": 15,
+        "downvote_count": 0,
+        "comments": [
+            {
+                "author_ref": "yorifuji",
+                "content": "素晴らしいアイデアですね！医療の例えは学生にも伝わりやすそうです。"
+            },
+            {
+                "author_ref": "giang",
+                "content": "この例えは本当に分かりやすいです！実際の現場でも使えそうですね。"
+            }
+        ]
+    },
+    {
+        "author_ref": "kimura",
+        "content": """🍳 僕はいつも「料理」で説明します。
+
+• QA = 「レシピや手順のチェック」（調理前の確認）
+• QC = 「味見（テイスティング）」（完成品の確認）
+
+レシピが間違っていたら、何度作り直してもマズい料理しかできませんからね（笑）
+学生には「料理を作る前に確認するのがQAだよ」と言うと伝わりやすいです。""",
+        "upvote_count": 23,
+        "downvote_count": 1,
+        "comments": [
+            {
+                "author_ref": "yorifuji",
+                "content": "料理の例えも分かりやすいですね！次の授業で使わせていただきます。"
+            },
+            {
+                "author_ref": "diem",
+                "content": "学生が喜びそうな例えですね。面白いアプローチです！"
+            },
+            {
+                "author_ref": "giang",
+                "content": "料理に例えると学生が食いつきますね（笑）明日から使います！"
+            }
+        ]
+    },
+    {
+        "author_ref": "giang",
+        "content": """🏗️ 私は「家を建てる」に例えています。
+
+• QA = 「設計図や建築計画のチェック」（建てる前の品質保証）
+• QC = 「完成した家の検査」（建てた後の品質検査）
+
+設計がダメだと、何度建て直しても欠陥住宅になりますからね。
+ITSSの学生には、実際のソフトウェア開発に近いイメージで伝わりやすいです。""",
+        "upvote_count": 18,
+        "downvote_count": 0,
+        "comments": [
+            {
+                "author_ref": "yorifuji",
+                "content": "建築の例えもいいですね！ウォーターフォールの説明にも使えそうです。"
+            },
+            {
+                "author_ref": "kimura",
+                "content": "実務に近い例えで、学生もイメージしやすいと思います。"
+            }
+        ]
     }
 ]
 
 
 async def clear_collections(db):
-    """Clear existing data from collections"""
     print("🧹 Clearing existing data...")
     await db.users.delete_many({})
     await db.categories.delete_many({})
@@ -428,42 +430,34 @@ async def clear_collections(db):
     await db.answers.delete_many({})
     print("✅ Collections cleared!")
 
-
 async def seed_users(db):
-    """Seed users into database"""
     print("\n👤 Seeding users...")
     hashed_password = get_password_hash(DEFAULT_PASSWORD)
-    user_ids = {}
+    user_map = {} 
     
     for user in USERS:
         user_doc = {
             "name": user["name"],
             "email": user["email"],
             "hashed_password": hashed_password,
-            "avatar_url": user.get("avatar_url"),
-            "bio": user.get("bio"),
+            "avatar_url": user["avatar_url"],
+            "bio": user["bio"],
             "role": user["role"],
             "status": "active",
             "violation_count": 0,
-            "ban_expires_at": None,
-            "ban_reason": None,
             "bookmarks": [],
-            "bookmarked_post_ids": [],
             "created_at": datetime.utcnow() - timedelta(days=random.randint(1, 90)),
             "updated_at": datetime.utcnow()
         }
         result = await db.users.insert_one(user_doc)
-        user_ids[user["email"]] = result.inserted_id
-        print(f"  ✓ Created user: {user['name']} ({user['email']}) - Role: {user['role']}")
+        user_map[user["id_ref"]] = result.inserted_id
+        print(f"  ✓ Created user: {user['name']}")
     
-    print(f"✅ Created {len(USERS)} users!")
-    return user_ids
-
+    return user_map
 
 async def seed_categories(db):
-    """Seed categories into database"""
     print("\n📁 Seeding categories...")
-    category_names = {}
+    category_map = {}
     
     for category in CATEGORIES:
         category_doc = {
@@ -475,18 +469,14 @@ async def seed_categories(db):
             "updated_at": datetime.utcnow()
         }
         result = await db.categories.insert_one(category_doc)
-        category_names[category["name"]] = result.inserted_id
-        print(f"  ✓ Created category: {category['name']}")
+        category_map[category["name"]] = result.inserted_id
     
-    print(f"✅ Created {len(CATEGORIES)} categories!")
-    return category_names
+    return category_map
 
-
-async def seed_tags(db, user_ids):
-    """Seed tags into database"""
+async def seed_tags(db, user_map):
     print("\n🏷️  Seeding tags...")
-    tag_ids = {}
-    admin_id = list(user_ids.values())[0]  # Use first admin to create tags
+    tag_map = {}
+    admin_id = user_map["admin1"]
     
     for category_name, tags in TAGS_BY_CATEGORY.items():
         for tag in tags:
@@ -499,113 +489,125 @@ async def seed_tags(db, user_ids):
                 "created_at": datetime.utcnow()
             }
             result = await db.tags.insert_one(tag_doc)
-            tag_ids[tag["name"]] = result.inserted_id
-            print(f"  ✓ Created tag: {tag['name']} (Category: {category_name})")
-    
-    total_tags = sum(len(tags) for tags in TAGS_BY_CATEGORY.values())
-    print(f"✅ Created {total_tags} tags!")
-    return tag_ids
+            tag_map[tag["name"]] = result.inserted_id
+            
+    return tag_map
 
+async def seed_posts_and_answers(db, user_map, tag_map):
+    print("\n📝 Seeding posts and answers...")
+    
+    for post_data in POSTS_DATA:
+        author_id = user_map[post_data["author_ref"]]
+        
+        # Lấy tag IDs, bỏ qua nếu tag không tồn tại
+        post_tag_ids = []
+        if "tags" in post_data:
+            post_tag_ids = [tag_map[t] for t in post_data["tags"] if t in tag_map]
+        
+        # Sử dụng days_ago nếu có, nếu không thì random
+        days_ago = post_data.get("days_ago", random.randint(1, 30))
 
-async def seed_posts(db, user_ids, tag_ids):
-    """Seed posts into database"""
-    print("\n📝 Seeding posts...")
-    
-    # Get list of regular users (not admins)
-    regular_user_emails = [u["email"] for u in USERS if u["role"] == "user"]
-    
-    for i, post in enumerate(POSTS):
-        # Randomly select an author from regular users
-        author_email = random.choice(regular_user_emails)
-        author_id = user_ids[author_email]
-        
-        # Get tag IDs for this post
-        post_tag_ids = [tag_ids[tag_name] for tag_name in post["tags"] if tag_name in tag_ids]
-        
         post_doc = {
-            "title": post["title"],
-            "content": post["content"],
+            "title": post_data["title"],
+            "content": post_data["content"],
             "author_id": author_id,
-            "category": post["category"],
+            "category": post_data["category"],
             "tag_ids": post_tag_ids,
             "answer_count": 0,
-            "view_count": random.randint(10, 500),
+            "view_count": post_data.get("views", 0),
             "is_deleted": False,
-            "created_at": datetime.utcnow() - timedelta(days=random.randint(1, 30)),
+            "created_at": datetime.utcnow() - timedelta(days=days_ago),
             "updated_at": datetime.utcnow()
         }
+        
         result = await db.posts.insert_one(post_doc)
+        post_id = result.inserted_id
         
-        # Update category post count
-        await db.categories.update_one(
-            {"name": post["category"]},
-            {"$inc": {"post_count": 1}}
-        )
-        
-        # Update tag post counts
+        # Cập nhật số lượng bài viết
+        await db.categories.update_one({"name": post_data["category"]}, {"$inc": {"post_count": 1}})
         for tag_id in post_tag_ids:
-            await db.tags.update_one(
-                {"_id": tag_id},
-                {"$inc": {"post_count": 1}}
-            )
-        
-        print(f"  ✓ Created post #{i+1}: {post['title'][:50]}... ({post['category']})")
-    
-    print(f"✅ Created {len(POSTS)} posts!")
+            await db.tags.update_one({"_id": tag_id}, {"$inc": {"post_count": 1}})
 
+        # Nếu là bài QA/QC Scenario thì thêm comment mẫu
+        if post_data.get("is_qa_scenario"):
+            print(f"    ↳ Adding QA/QC specific answers to post: {post_data['title'][:20]}...")
+            for ans in QA_ANSWERS:
+                ans_author_id = user_map[ans["author_ref"]]
+
+                # Tạo comments cho answer này
+                comments_list = []
+                if "comments" in ans and len(ans["comments"]) > 0:
+                    for comment in ans["comments"]:
+                        comment_author_id = user_map[comment["author_ref"]]
+                        comment_doc = {
+                            "id": str(ObjectId()),
+                            "author_id": comment_author_id,
+                            "content": comment["content"],
+                            "created_at": datetime.utcnow() - timedelta(minutes=random.randint(5, 60))
+                        }
+                        comments_list.append(comment_doc)
+
+                # Tạo fake upvotes/downvotes
+                upvote_count = ans.get("upvote_count", random.randint(3, 15))
+                downvote_count = ans.get("downvote_count", 0)
+
+                # Tạo danh sách fake user IDs cho votes (loại bỏ Điệp - chỉ có sensei vote)
+                # Chỉ cho phép Yorifuji, Kimura, Diem, Giang và các sensei khác vote
+                allowed_voters = [user_map[ref] for ref in ["yorifuji", "kimura", "diem", "giang", "tanaka", "sato", "suzuki", "yamada", "takahashi"]]
+                upvote_user_ids = random.sample(allowed_voters, min(upvote_count, len(allowed_voters)))
+                downvote_user_ids = random.sample(
+                    [uid for uid in allowed_voters if uid not in upvote_user_ids],
+                    min(downvote_count, len(allowed_voters) - len(upvote_user_ids))
+                ) if downvote_count > 0 else []
+
+                answer_doc = {
+                    "content": ans["content"],
+                    "post_id": post_id,
+                    "author_id": ans_author_id,
+                    "is_accepted_solution": False,
+                    "votes": {
+                        "upvoted_by": upvote_user_ids,
+                        "downvoted_by": downvote_user_ids,
+                        "score": upvote_count - downvote_count
+                    },
+                    "comments": comments_list,
+                    "is_deleted": False,
+                    "created_at": datetime.utcnow() - timedelta(hours=random.randint(1, 5)),
+                    "updated_at": datetime.utcnow()
+                }
+                await db.answers.insert_one(answer_doc)
+                await db.posts.update_one({"_id": post_id}, {"$inc": {"answer_count": 1}})
+            print(f"    ✅ Added {len(QA_ANSWERS)} answers with {sum(ans.get('upvote_count', 0) for ans in QA_ANSWERS)} total upvotes.")
 
 async def main():
-    """Main function to seed database"""
     print("=" * 60)
-    print("🌱 TEACH BETTER - DATABASE SEEDING SCRIPT")
-    print("=" * 60)
-    print(f"\n📊 Data to be created:")
-    print(f"   - Users: {len(USERS)} (2 admins, 8 regular users)")
-    print(f"   - Categories: {len(CATEGORIES)}")
-    print(f"   - Tags: {sum(len(tags) for tags in TAGS_BY_CATEGORY.values())}")
-    print(f"   - Posts: {len(POSTS)}")
-    print(f"\n🔐 Default password: {DEFAULT_PASSWORD}")
+    print("🌱 TEACH BETTER - FINAL DEMO DATA SEEDING")
+    print("   User: Nguyễn Thị Điệp | Context: ITSS & Agile")
     print("=" * 60)
     
-    # Connect to MongoDB
-    print("\n🔗 Connecting to MongoDB...")
     client = AsyncIOMotorClient(MONGODB_URL)
     db = client[MONGODB_DB_NAME]
     
     try:
-        # Test connection
         await client.admin.command('ping')
         print("✅ Connected to MongoDB!")
         
-        # Clear existing data
         await clear_collections(db)
-        
-        # Seed data
-        user_ids = await seed_users(db)
-        category_ids = await seed_categories(db)
-        tag_ids = await seed_tags(db, user_ids)
-        await seed_posts(db, user_ids, tag_ids)
+        user_map = await seed_users(db)
+        category_map = await seed_categories(db)
+        tag_map = await seed_tags(db, user_map)
+        await seed_posts_and_answers(db, user_map, tag_map)
         
         print("\n" + "=" * 60)
-        print("🎉 SEEDING COMPLETE!")
+        print("🎉 SEEDING COMPLETE! READY FOR DEMO.")
         print("=" * 60)
-        print("\n📋 Summary:")
-        print(f"   ✓ Users: {len(USERS)}")
-        print(f"   ✓ Categories: {len(CATEGORIES)}")
-        print(f"   ✓ Tags: {sum(len(tags) for tags in TAGS_BY_CATEGORY.values())}")
-        print(f"   ✓ Posts: {len(POSTS)}")
-        print(f"\n🔑 Login credentials:")
-        print(f"   Admin 1: admin@teachbetter.com / {DEFAULT_PASSWORD}")
-        print(f"   Admin 2: admin2@teachbetter.com / {DEFAULT_PASSWORD}")
-        print(f"   Users: levan.a@gmail.com, tranthi.b@gmail.com, ... / {DEFAULT_PASSWORD}")
+        print(f"  Login User: diep.nguyen@example.com")
+        print(f"  Password:   {DEFAULT_PASSWORD}")
         
     except Exception as e:
         print(f"\n❌ Error: {e}")
-        raise
     finally:
         client.close()
-        print("\n🔌 Disconnected from MongoDB.")
-
 
 if __name__ == "__main__":
     asyncio.run(main())
