@@ -79,6 +79,7 @@ export const createDiagnosis = async (data, token) => {
       'Content-Type': 'multipart/form-data',
       Authorization: `Bearer ${token}`,
     },
+    timeout: 60000, // 60 giây cho LLM call
   });
 
   // Note: axiosConfig.js response interceptor already returns response.data
