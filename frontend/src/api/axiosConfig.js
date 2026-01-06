@@ -8,7 +8,7 @@ import axios from 'axios';
 // Tạo axios instance với cấu hình mặc định
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
-  timeout: 10000,
+  timeout: 30000, // 30 giây cho các API thông thường
   headers: {
     'Content-Type': 'application/json',
   },
