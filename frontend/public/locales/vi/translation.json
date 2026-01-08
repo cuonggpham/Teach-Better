@@ -134,7 +134,7 @@
     "categories": "Danh mục",
     "all_categories": "Tất cả",
     "popular_tags": "Thẻ phổ biến",
-    "search_placeholder": "Tìm kiếm theo tiêu đề, từ khóa, tag hoặc tên người đăng",
+    "search_placeholder": "Tìm theo tiêu đề, từ khóa",
     "sort": {
       "newest": "Mới nhất",
       "most_voted": "Nhiều vote nhất",
@@ -311,7 +311,7 @@
     "no_history_desc": "Hãy bắt đầu chẩn đoán đầu tiên!",
     "start_diagnosis": "Bắt đầu chẩn đoán",
     "all_subjects": "Tất cả",
-    "search_placeholder": "Tìm kiếm...",
+    "search_placeholder": "Tìm theo tiêu đề hoặc nội dung",
     "start_date": "Ngày bắt đầu",
     "end_date": "Ngày kết thúc",
     "reset": "Đặt lại",

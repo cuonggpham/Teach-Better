@@ -131,9 +131,12 @@ class AIDiagnosisService:
         """
         query = {"user_id": ObjectId(user_id)}
         
-        # Add search filter (search in title)
+        # Add search filter (title or lesson content)
         if search:
-            query["title"] = {"$regex": search, "$options": "i"}
+            query["$or"] = [
+                {"title": {"$regex": search, "$options": "i"}},
+                {"input.content": {"$regex": search, "$options": "i"}},
+            ]
         
         # Add subject filter
         if subject:
@@ -166,9 +169,12 @@ class AIDiagnosisService:
         """Count total diagnoses for a user with optional filters."""
         query = {"user_id": ObjectId(user_id)}
         
-        # Add search filter
+        # Add search filter (title or lesson content)
         if search:
-            query["title"] = {"$regex": search, "$options": "i"}
+            query["$or"] = [
+                {"title": {"$regex": search, "$options": "i"}},
+                {"input.content": {"$regex": search, "$options": "i"}},
+            ]
         
         # Add subject filter
         if subject:

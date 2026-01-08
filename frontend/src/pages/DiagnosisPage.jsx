@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,11 +17,9 @@ const DiagnosisPage = () => {
   const { isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  const fileInputRef = useRef(null);
 
   // Form state
   const [lessonContent, setLessonContent] = useState('');
-  const [audioFile, setAudioFile] = useState(null);
   const [subject, setSubject] = useState('');
   const [nationality, setNationality] = useState('');
   const [level, setLevel] = useState('');
@@ -65,7 +63,7 @@ const DiagnosisPage = () => {
 
   // Nationality options
   const nationalityOptions = [
-    { value: 'vietnam', label: 'Vietnam' },
+    { value: 'vietnam', label: t('diagnosis.nationalities.vietnam', 'ベトナム') },
     { value: 'china', label: t('diagnosis.nationalities.china', '中国') },
     { value: 'korea', label: t('diagnosis.nationalities.korea', '韓国') },
     { value: 'thailand', label: t('diagnosis.nationalities.thailand', 'タイ') },
@@ -97,38 +95,11 @@ const DiagnosisPage = () => {
     { value: '61+', label: '61+' },
   ];
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const validTypes = ['audio/mp3', 'audio/wav', 'audio/mpeg', 'audio/ogg', 'audio/webm'];
-      if (!validTypes.includes(file.type)) {
-        toast.error(t('diagnosis.errors.invalid_audio', '有効な音声ファイルを選択してください'));
-        return;
-      }
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error(t('diagnosis.errors.file_too_large', 'ファイルが大きすぎます（最大50MB）'));
-        return;
-      }
-      setAudioFile(file);
-    }
-  };
-
-
-
-  const handleRemoveFile = () => {
-    setAudioFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!lessonContent.trim() && !audioFile) {
-      toast.error(t('diagnosis.errors.content_required', '授業内容を入力するか、ファイルをアップロードしてください'));
+    if (!lessonContent.trim()) {
+      toast.error(t('diagnosis.errors.content_required', '授業内容を入力してください'));
       return;
     }
 
@@ -147,7 +118,6 @@ const DiagnosisPage = () => {
     try {
       const data = {
         lesson_content: lessonContent,
-        audio_file: audioFile,
         subject,
         nationality,
         level,
@@ -276,7 +246,6 @@ const DiagnosisPage = () => {
     setShowResultModal(false);
     setAnalysisResult(null);
     setLessonContent('');
-    setAudioFile(null);
     setSubject('');
     setNationality('');
     setLevel('');
@@ -351,10 +320,6 @@ const DiagnosisPage = () => {
         <div className="diagnosis-header">
           <h1>{t('diagnosis.title', '診断')}</h1>
           <Button variant="ghost" onClick={() => navigate('/diagnosis/history')}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3v5h5" />
-              <path d="M3 8a9 9 0 1 1 1.83 5.54" />
-            </svg>
             {t('diagnosis.history', '診断履歴')}
           </Button>
         </div>
@@ -377,45 +342,6 @@ const DiagnosisPage = () => {
               onChange={(e) => setLessonContent(e.target.value)}
               rows={8}
             />
-
-            {/* Audio Upload */}
-            <div className="audio-upload-section">
-              {audioFile ? (
-                <div className="audio-file-preview">
-                  <div className="audio-file-info">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 18V5l12-2v13" />
-                      <circle cx="6" cy="18" r="3" />
-                      <circle cx="18" cy="16" r="3" />
-                    </svg>
-                    <span className="audio-file-name">{audioFile.name}</span>
-                    <span className="audio-file-size">
-                      ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
-                    </span>
-                  </div>
-                  <button type="button" className="remove-audio-btn" onClick={handleRemoveFile}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="audio-upload-btn"
-                  onClick={() => toast.info(t('common.coming_soon', 'Chức năng này sẽ được thực hiện sau'))}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  {t('diagnosis.upload_audio', '録音ファイルをアップロード')}
-                </button>
-              )}
-            </div>
-
 
           </Card>
 
@@ -502,14 +428,7 @@ const DiagnosisPage = () => {
                   {t('diagnosis.analyzing', '分析中...')}
                 </>
               ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  {t('diagnosis.submit', '診断する')}
-                </>
+                {t('diagnosis.submit', '診断する')}
               )}
             </Button>
           </div>
