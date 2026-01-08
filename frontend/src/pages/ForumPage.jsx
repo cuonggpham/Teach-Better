@@ -268,7 +268,7 @@ const ForumPage = () => {
               <form className="search-bar" onSubmit={handleSearch}>
                 <input
                   type="text"
-                  placeholder={t('forum.search_placeholder', 'Tìm kiếm theo tiêu đề, từ khóa, tag hoặc tên người đăng')}
+                  placeholder={t('forum.search_placeholder', 'Tìm theo tiêu đề, từ khóa')}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   className="search-input"

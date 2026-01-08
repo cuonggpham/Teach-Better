@@ -134,7 +134,7 @@
     "categories": "カテゴリー",
     "all_categories": "すべて",
     "popular_tags": "人気のタグ",
-    "search_placeholder": "タイトル、キーワード、タグ、投稿者で検索",
+    "search_placeholder": "タイトル・キーワードで検索",
     "sort": {
       "newest": "最新",
       "most_voted": "投票数が多い順",
